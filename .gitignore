@@ -1,0 +1,5 @@
+.env
+.env.local
+
+flight_booking_backend/
+flight_booking_frontend/
