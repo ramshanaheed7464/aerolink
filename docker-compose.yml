@@ -5,25 +5,48 @@ services:
       - "3000:80"
     depends_on:
       - backend
+      - keycloak
 
   backend:
     build: ./flight_booking_backend
     ports:
-      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/flight-booking
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/flight-booking/protocol/openid-connect/certs
     env_file:
       - .env
     depends_on:
       - mysql
+      - keycloak
 
   mysql:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
       - mysql_data:/var/lib/mysql
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    command: start-dev
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN_USERNAME}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KC_DB=mysql
+      - KC_DB_URL=jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      - KC_DB_USERNAME=root
+      - KC_DB_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    volumes:
+      - keycloak_data:/opt/keycloak/data
 
 volumes:
   mysql_data:
+  keycloak_data:
